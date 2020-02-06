@@ -1,9 +1,9 @@
 {
-    "name": "node-modules-context-menu",
-    "displayName": "Node Modules Context Menu",
-    "description": "Context menu for node_modules directory.",
-    "version": "0.0.3",
-    "publisher": "darthyody",
+    "name": "package-managers-context-menu",
+    "displayName": "Package Managers Context Menu",
+    "description": "Context menu for node_modules & vendor directory.",
+    "version": "0.0.1",
+    "publisher": "ctf0",
     "engines": {
         "vscode": "^1.16.0"
     },
@@ -11,31 +11,49 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.hideItem",
-        "onCommand:extension.nodeModulesConfig"
+        "onCommand:extension.hideVendor",
+        "onCommand:extension.vendorConfig",
+        "onCommand:extension.hideNode",
+        "onCommand:extension.nodeConfig"
     ],
     "main": "./out/src/extension",
     "contributes": {
         "menus": {
             "explorer/context": [
                 {
-                    "command": "extension.hideItem",
+                    "command": "extension.hideVendor",
+                    "when": "resourceFilename == 'vendor'"
+                },
+                {
+                    "command": "extension.vendorConfig",
+                    "when": "resourceFilename == 'vendor'"
+                },
+                {
+                    "command": "extension.hideNode",
                     "when": "resourceFilename == 'node_modules'"
                 },
                 {
-                    "command": "extension.nodeModulesConfig",
+                    "command": "extension.nodeConfig",
                     "when": "resourceFilename == 'node_modules'"
                 }
             ]
         },
         "commands": [
             {
-                "command": "extension.hideItem",
-                "title": "Hide Folder"
+                "command": "extension.hideVendor",
+                "title": "PM: Hide Folder"
             },
             {
-                "command": "extension.nodeModulesConfig",
-                "title": "Hide non-named dependencies"
+                "command": "extension.vendorConfig",
+                "title": "PM: Hide Un-Required Dependencies"
+            },
+            {
+                "command": "extension.hideNode",
+                "title": "PM: Hide Folder"
+            },
+            {
+                "command": "extension.nodeConfig",
+                "title": "PM: Hide Un-Required Dependencies"
             }
         ]
     },
@@ -53,12 +71,5 @@
         "@types/node": "^7.0.43",
         "@types/mocha": "^2.2.42"
     },
-    "dependencies": {
-        "vsce": "^1.30.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/lifegems/node-modules-context-menu.git"
-    },
-    "homepage": "https://marketplace.visualstudio.com/items?itemName=darthyody.node-modules-context-menu"
+    "repository": "https://github.com/ctf0/vendor-context-menu"
 }
