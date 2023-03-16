@@ -1,112 +1,115 @@
-'use strict'
+'use strict';
 
-import * as vscode from 'vscode'
-import * as nodePath from "path"
+import fs from 'node:fs';
+import * as nodePath from 'node:path';
+import * as vscode from 'vscode';
+export const PACKAGE_NAME = 'packageManagers';
 
-const fs = require('fs')
+let config: vscode.WorkspaceConfiguration;
 
 export function activate(context) {
-    context.subscriptions.push(vscode.commands.registerCommand('extension.hideNode', hideFolder))
-    context.subscriptions.push(vscode.commands.registerCommand('extension.hideVendor', hideFolder))
-    context.subscriptions.push(forNode())
-    context.subscriptions.push(forVendor())
-}
+    readConfig();
 
-function forNode() {
-    return vscode.commands.registerCommand('extension.nodeConfig', async (data) => {
-        return doStuff(
-            data,
-            await getFolders(data),
-            getPMJsonFilePath(data, "node_modules", "package.json"),
-            ['dependencies', 'devDependencies']
-        )
-    })
-}
+    // config
+    vscode.workspace.onDidChangeConfiguration(async (e) => {
+        if (e.affectsConfiguration(PACKAGE_NAME)) {
+            readConfig();
+        }
+    });
 
-function forVendor() {
-    return vscode.commands.registerCommand('extension.vendorConfig', async (data) => {
-        return doStuff(
-            data,
-            await getFolders(data),
-            getPMJsonFilePath(data, "vendor", "composer.json"),
-            ['require', 'require-dev']
-        )
-    })
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.hideFolder', hideFolder),
+        vscode.commands.registerCommand('extension.hidePMDeps', async (data) => {
+            const pm = config.list.find((item) => data.path.endsWith(item.folder_name));
+
+            doStuff(
+                data,
+                await getFolders(data),
+                getPMJsonFilePath(data, pm.folder_name, pm.file_name),
+                pm.packages_lists,
+            );
+        }),
+    );
 }
 
 async function doStuff(data, files, path, keys) {
-    let doc = await vscode.workspace.openTextDocument(path)
-    let jsonFileContent = JSON.parse(doc.getText())
-    let mapHighestDep = (dep) => ((dep.indexOf("/") > -1) ? dep.substr(0, dep.indexOf("/")) : dep)
-    let libs = resolvePkgsList(jsonFileContent, mapHighestDep, keys)
+    const doc = await vscode.workspace.openTextDocument(path);
+    const jsonFileContent = JSON.parse(doc.getText());
+    const mapHighestDep = (dep) => ((dep.indexOf('/') > -1) ? dep.substr(0, dep.indexOf('/')) : dep);
+    const libs = resolvePkgsList(jsonFileContent, mapHighestDep, keys);
 
     hidePaths(
         files.filter((m) => libs.indexOf(m) < 0)
             .map((m) => resolvePath(
-                nodePath.join(data.fsPath, m)
-            ))
-    )
-    showMsg(data.fsPath)
+                nodePath.join(data.fsPath, m),
+            )),
+    );
+
+    await showMsg(data.fsPath);
 }
 
 /* Utils -------------------------------------------------------------------- */
 function showMsg(path, single = false) {
-    path = path.split('/').pop()
-    let msg = single
+    path = path.split('/').pop();
+    const msg = single
         ? `"${path}" visibility updated.`
-        : `"${path}" directories visibility updated.`
+        : `"${path}" directories visibility updated.`;
 
-    return vscode.window.showInformationMessage(msg)
+    return vscode.window.showInformationMessage(msg);
 }
 
 function resolvePkgsList(config, mapHighestDep, keys) {
-    let libs = []
+    const libs: any = [];
 
     for (const key of keys) {
         if (config.hasOwnProperty(key)) {
-            let deps = Object.keys(config[key]).map(mapHighestDep)
-            libs.push(...deps)
+            const deps = Object.keys(config[key]).map(mapHighestDep);
+            libs.push(...deps);
         }
     }
 
-    return libs
+    return libs;
 }
 
 /* Path -------------------------------------------------------------------- */
 async function getFolders(data) {
-    const fileNames = await fs.promises.readdir(data.fsPath, { withFileTypes: true })
+    const fileNames = await fs.promises.readdir(data.fsPath, { withFileTypes: true });
 
-    return fileNames.filter((file) => file.isDirectory()).map((e) => e.name)
+    return fileNames.filter((file) => file.isDirectory()).map((e) => e.name);
 }
 
 function getPMJsonFilePath(data, folder, file) {
-    return data.fsPath.replace(folder, file).replace(/\\/g, "/")
+    return data.fsPath.replace(folder, file).replace(/\\/g, '/');
 }
 
 function resolvePath(filepath) {
-    let root = vscode.workspace.rootPath
-    let path = filepath.replace(root, "").replace(/\\/g, "/")
-    path = ((path[0] == "/") ? path.substr(1) : path)
+    const root = vscode.workspace.rootPath;
+    let path = filepath.replace(root, '').replace(/\\/g, '/');
+    path = ((path[0] == '/') ? path.substr(1) : path);
 
-    return path
+    return path;
 }
 
-function hideFolder(data) {
+async function hideFolder(data) {
     if (!data) {
-        return false
+        return false;
     }
 
-    let path = resolvePath(data.fsPath)
-    hidePaths([path])
-    showMsg(path, true)
+    const path = resolvePath(data.fsPath);
+    await showMsg(path, true);
+    hidePaths([path]);
 }
 
 async function hidePaths(paths) {
-    let config = await vscode.workspace.getConfiguration()
-    let excluded = config.get("files.exclude", {})
-    paths.forEach((path) => excluded[path] = true)
+    const config = await vscode.workspace.getConfiguration();
+    const excluded = config.get('files.exclude', {});
+    paths.forEach((path) => excluded[path] = true);
 
-    await config.update("files.exclude", excluded)
+    await config.update('files.exclude', excluded);
+}
+
+function readConfig() {
+    config = vscode.workspace.getConfiguration(PACKAGE_NAME);
 }
 
 /* ---------------------------------------------------------------------- */
