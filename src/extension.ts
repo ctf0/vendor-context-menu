@@ -1,10 +1,8 @@
-'use strict';
-
 import fs from 'node:fs';
 import * as nodePath from 'node:path';
 import * as vscode from 'vscode';
-export const PACKAGE_NAME = 'packageManagers';
 
+export const PACKAGE_NAME = 'packageManagers';
 let config: vscode.WorkspaceConfiguration;
 
 export function activate(context) {

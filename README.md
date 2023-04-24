@@ -9,3 +9,7 @@ based on https://github.com/lifegems/node-modules-context-menu + new changes
     - composer > vendor
 - smaller size
 - better api
+
+### Helpers
+
+- https://marketplace.visualstudio.com/items?itemName=eamodio.toggle-excluded-files
